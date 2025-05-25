@@ -1,4 +1,4 @@
-# Read‑It‑Later Service – Firebase MVP Requirements
+# The Librarian: A Read‑It‑Later Service – Firebase MVP Requirements
 
 ## Purpose
 
