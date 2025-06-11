@@ -15,12 +15,16 @@ app.get('/', (req, res) => {
 // Endpoint to save a URL
 app.post('/save', (req, res) => {
     const { url } = req.body;
-    if (url) {
-        urls.push(url);
-        res.status(200).send({ message: 'URL saved successfully!' });
-    } else {
-        res.status(400).send({ message: 'URL is required' });
+    if (!url) {
+        return res.status(400).send({ message: 'URL is required' });
     }
+
+    if (urls.includes(url)) {
+        return res.status(409).send({ message: 'URL already saved' });
+    }
+
+    urls.push(url);
+    res.status(200).send({ message: 'URL saved successfully!' });
 });
 
 // Endpoint to list all saved URLs
