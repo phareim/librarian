@@ -4,7 +4,11 @@
   "description": "A helpful service that keeps taps on articles, books and their metadata.",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "docker:build": "docker build -t librarian .",
+    "docker:run": "docker run -p 3333:3000 -d librarian",
+    "docker:stop": "docker stop librarian",
+    "docker:remove": "docker rm librarian"
   },
   "dependencies": {
     "express": "^4.17.1"
