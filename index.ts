@@ -1,4 +1,5 @@
 import express, { Request, Response } from 'express';
+import { extractArticleInfo } from './ai/extract-article-info-flow';
 
 const app = express();
 const port = 3000;
@@ -8,6 +9,9 @@ interface Article {
     title: string;
     url: string;
     dateSaved: Date;
+    summary?: string;
+    imageUrl?: string | null;
+    dataAiHint?: string;
 }
 
 // Use express.json() to parse JSON bodies
@@ -21,7 +25,7 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 // Endpoint to save a URL
-app.post('/save', (req: Request, res: Response) => {
+app.post('/save', async (req: Request, res: Response) => {
     const { url } = req.body;
     if (!url) {
         return res.status(400).send({ message: 'URL is required' });
@@ -31,14 +35,24 @@ app.post('/save', (req: Request, res: Response) => {
         return res.status(409).send({ message: 'URL already saved' });
     }
 
-    const newArticle: Article = {
-        title: 'NAME',
-        url: url,
-        dateSaved: new Date(),
-    };
+    try {
+        const articleInfo = await extractArticleInfo({ articleUrl: url });
 
-    articles.push(newArticle);
-    res.status(200).send({ message: 'Article saved successfully!' });
+        const newArticle: Article = {
+            title: articleInfo.title,
+            url: url,
+            dateSaved: new Date(),
+            summary: articleInfo.summary,
+            imageUrl: articleInfo.imageUrl,
+            dataAiHint: articleInfo.dataAiHint,
+        };
+
+        articles.push(newArticle);
+        res.status(200).send({ message: 'Article saved successfully!', article: newArticle });
+    } catch (error) {
+        console.error('Error extracting article info:', error);
+        res.status(500).send({ message: 'Error extracting article information' });
+    }
 });
 
 // Endpoint to list all saved URLs
