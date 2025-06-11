@@ -37,7 +37,18 @@ curl -X POST -H "Content-Type: application/json" -d '{"url": "https://www.google
 
 -   **Endpoint:** `/read`
 -   **Method:** `GET`
--   **Success Response:** An array of saved URLs.
+-   **Success Response:** An array of saved article objects.
+
+**Example Response:**
+```json
+[
+    {
+        "title": "NAME",
+        "url": "https://www.google.com",
+        "dateSaved": "2023-10-27T10:00:00.000Z"
+    }
+]
+```
 
 **Example:**
 ```bash

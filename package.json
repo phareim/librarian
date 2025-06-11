@@ -2,15 +2,21 @@
   "name": "librarian",
   "version": "1.0.0",
   "description": "A helpful service that keeps taps on articles, books and their metadata.",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "dev": "ts-node-dev --respawn --transpile-only index.ts",
     "docker:build": "docker build -t librarian .",
-    "docker:run": "docker run -p 3333:3000 -d librarian",
-    "docker:stop": "docker stop librarian",
-    "docker:remove": "docker rm librarian"
+    "docker:run": "docker run -p 3333:3000 -d librarian"
   },
   "dependencies": {
     "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.13",
+    "@types/node": "^16.11.7",
+    "ts-node-dev": "^1.1.8",
+    "typescript": "^4.4.4"
   }
 } 

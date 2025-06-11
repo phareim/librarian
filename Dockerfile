@@ -1,20 +1,24 @@
-# Use an official Node.js runtime as a parent image
-FROM node:14-slim
+# Stage 1: Build the TypeScript code
+FROM node:16-alpine as builder
 
-# Set the working directory in the container
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json to the working directory
 COPY package*.json ./
+COPY tsconfig.json ./
 
-# Install any needed packages
-RUN npm install
-
-# Bundle app source
+RUN npm install --only=production
 COPY . .
+RUN npm run build
 
-# Make port 3000 available to the world outside this container
+# Stage 2: Create the final image
+FROM node:16-alpine
+
+WORKDIR /usr/src/app
+
+COPY package*.json ./
+RUN npm install --only=production
+
+COPY --from=builder /usr/src/app/dist ./dist
+
 EXPOSE 3000
-
-# Run index.js when the container launches
 CMD [ "npm", "start" ] 
