@@ -58,12 +58,16 @@ app.post('/save', async (req: Request, res: Response) => {
 
         const articleContentMarkDown = turndownService.turndown(readableArticle.content);
 
+        // Extract the first image URL from the markdown content
+        const imageUrlMatch = /!\[.*?\]\((.*?)\)/.exec(articleContentMarkDown);
+        const imageUrl = imageUrlMatch ? imageUrlMatch[1] : null;
+
         const newArticle: Article = {
             title: readableArticle.title || aiResponse.title, // Prefer Readability's title
             url: url,
             dateSaved: new Date(),
             summary: aiResponse.summary,
-            imageUrl: aiResponse.imageUrl,
+            imageUrl: imageUrl,
             dataAiHint: aiResponse.dataAiHint,
             articleContentMarkDown: articleContentMarkDown,
         };

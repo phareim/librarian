@@ -20,8 +20,7 @@ export type ExtractArticleInfoInput = z.infer<typeof ExtractArticleInfoInputSche
 const ModelOutputSchema = z.object({
   title: z.string().describe('The extracted title of the article. If extraction fails, use the base of the URL itself (e.g., "https://www.google.com" -> "Google").'),
   summary: z.string().describe('A concise summary of the article content. If extraction fails, use (e.g., "no summary available").'),
-  imageUrl: z.string().describe('The full URL of the most relevant image from the article. MUST be an empty string "" if no suitable image is found, if image URLs cannot be accessed, or if the main extraction fails.'),
-  dataAiHint: z.string().max(50).describe('two to four keywords describing the article content (e.g., "technology abstract", "mountain landscape"). Used for placeholder image services. If no image, base on article topic. If extraction fails, use an empty string.'),
+  dataAiHint: z.string().max(100).describe('two to four keywords describing the article content (e.g., "technology abstract", "mountain landscape"). Used for placeholder image services. If no image, base on article topic. If extraction fails, use an empty string.'),
 });
 
 // Schema for the `extractArticleInfo` function's final, processed output.
@@ -30,7 +29,6 @@ const ModelOutputSchema = z.object({
 const ExtractArticleInfoOutputSchema = z.object({
   title: z.string(),
   summary: z.string(),
-  imageUrl: z.string().url().nullable(), // Validated as URL or null by the flow.
   dataAiHint: z.string().max(100),
 });
 export type ExtractArticleInfoOutput = z.infer<typeof ExtractArticleInfoOutputSchema>;
@@ -49,13 +47,12 @@ Given the following URL, please extract the following fields. You MUST provide a
 
 1.  \`title\`: The extracted title of the article. If extraction fails, use the base of the URL itself (e.g., "https://www.google.com" -> "Google").
 2.  \`summary\`: A concise summary of the article content. If extraction fails, use (e.g., "no summary available").
-3.  \`imageUrl\`: The full and complete URL of the largest and most relevant image from the article. provide an empty string "" if no suitable image is found.
-4.  \`dataAiHint\`: two to four keywords describing the article content (e.g., "technology abstract", "mountain landscape"). Used for placeholder image services. If no image, base on article topic. If extraction fails, use an empty string.
+3.  \`dataAiHint\`: two to four keywords describing the article content (e.g., "technology abstract", "mountain landscape"). Used for placeholder image services. If no image, base on article topic. If extraction fails, use an empty string.
 
 Article URL: {{{articleUrl}}}
 
 Your response MUST conform to the output schema. All fields in the schema are required.
-If you cannot access the URL or extract title and summary, you MUST still provide a string for title and summary indicating the failure, imageUrl as an empty string "", and dataAiHint as a generic error string like "extraction error".
+If you cannot access the URL or extract title and summary, you MUST still provide a string for title and summary indicating the failure, and dataAiHint as a generic error string like "extraction error".
 `,
 });
 
@@ -75,7 +72,6 @@ const extractArticleInfoFlow = ai.defineFlow(
         return {
             title: "Extraction Failed: Model Error",
             summary: "The AI model encountered an error and could not process the URL.",
-            imageUrl: null,
             dataAiHint: "model error",
         };
     }
@@ -90,30 +86,16 @@ const extractArticleInfoFlow = ai.defineFlow(
         ? modelOutput.summary
         : "Extraction Failed: Invalid Summary From Model";
         
-    // Process imageUrl (string from model, potentially empty, convert to string | null)
-    let processedImageUrl: string | null = null;
-    if (modelOutput.imageUrl && typeof modelOutput.imageUrl === 'string' && modelOutput.imageUrl.trim() !== "") {
-      try {
-        // Validate if it's a URL structure. The .url() in ExtractArticleInfoOutputSchema will re-validate.
-        new URL(modelOutput.imageUrl); 
-        processedImageUrl = modelOutput.imageUrl;
-      } catch (e) {
-        // AI returned a non-empty string that's not a valid URL. Treat as no image.
-        processedImageUrl = null;
-      }
-    } // If modelOutput.imageUrl is "" or whitespace only, processedImageUrl remains null.
-
     // Process dataAiHint (string from model)
     // Ensure it's not empty after trimming, and provide a fallback.
     const finalDataAiHint = (typeof modelOutput.dataAiHint === 'string' && modelOutput.dataAiHint.trim() !== '') 
-        ? modelOutput.dataAiHint.substring(0, 50).trim()
+        ? modelOutput.dataAiHint.substring(0, 100).trim()
         : "content hint";
 
 
     // If overall extraction failed (indicated by title), ensure imageUrl is null.
     const titleIndicatesFailure = finalTitle.toLowerCase().includes("extraction failed");
     if (titleIndicatesFailure) {
-        processedImageUrl = null;
         // dataAiHint should already be set to an error hint by the prompt in this case.
         // If it wasn't, the fallback above or a more specific one here could apply.
         // e.g. if (titleIndicatesFailure && finalDataAiHint === "content hint") finalDataAiHint = "extraction error";
@@ -122,7 +104,6 @@ const extractArticleInfoFlow = ai.defineFlow(
     const result: ExtractArticleInfoOutput = {
       title: finalTitle,
       summary: finalSummary,
-      imageUrl: processedImageUrl,
       dataAiHint: finalDataAiHint || (titleIndicatesFailure ? "extraction error" : "general content"), // Ensure dataAiHint is never empty
     };
     
