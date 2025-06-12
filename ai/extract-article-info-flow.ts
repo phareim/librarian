@@ -18,10 +18,10 @@ export type ExtractArticleInfoInput = z.infer<typeof ExtractArticleInfoInputSche
 // Schema for the AI model's direct output.
 // For `imageUrl`, AI is instructed to return "" for no image to prevent API schema issues.
 const ModelOutputSchema = z.object({
-  title: z.string().describe('The extracted title of the article. If extraction fails, this MUST be a string indicating failure (e.g., "Extraction Failed: URL Inaccessible").'),
-  summary: z.string().describe('A concise summary of the article content. If extraction fails, this MUST be a string explaining the issue (e.g., "Could not access or process the content at the provided URL.").'),
+  title: z.string().describe('The extracted title of the article. If extraction fails, use the base of the URL itself (e.g., "https://www.google.com" -> "Google").'),
+  summary: z.string().describe('A concise summary of the article content. If extraction fails, use (e.g., "no summary available").'),
   imageUrl: z.string().describe('The full URL of the most relevant image from the article. MUST be an empty string "" if no suitable image is found, if image URLs cannot be accessed, or if the main extraction fails.'),
-  dataAiHint: z.string().max(50).describe('One or two keywords describing the image or article content (e.g., "technology abstract", "mountain landscape"). Used for placeholder image services. If no image, base on article topic. If extraction fails, use "content error". Maximum 50 characters. MUST always be a non-empty string.'),
+  dataAiHint: z.string().max(50).describe('two to four keywords describing the article content (e.g., "technology abstract", "mountain landscape"). Used for placeholder image services. If no image, base on article topic. If extraction fails, use an empty string.'),
 });
 
 // Schema for the `extractArticleInfo` function's final, processed output.
@@ -47,10 +47,10 @@ const extractArticleInfoPrompt = ai.definePrompt({
   prompt: `You are an expert at extracting information from web pages.
 Given the following URL, please extract the following fields. You MUST provide a value for every field as specified.
 
-1.  \`title\`: The main title of the article. If extraction fails, this MUST be a string indicating failure (e.g., "Extraction Failed: URL Inaccessible" or "Extraction Failed: Content Unsuitable").
-2.  \`summary\`: A concise summary (2-3 sentences) of its content. If extraction fails, this MUST be a string explaining the issue (e.g., "Could not access or process the content at the provided URL.").
-3.  \`imageUrl\`: The full URL of the most prominent and relevant image in the article (e.g., the main article image or a header image). This field MUST be an empty string "" (not null) if no suitable image is found, if you cannot access image URLs, or if the main extraction fails.
-4.  \`dataAiHint\`: One or two keywords (maximum 50 characters, e.g., 'technology abstract', 'mountain landscape') based on the image content. If no image is found, base the hint on the article's main topic. If the extraction fails entirely, this MUST be a generic hint like 'content error'. This field MUST always be a non-empty string.
+1.  \`title\`: The extracted title of the article. If extraction fails, use the base of the URL itself (e.g., "https://www.google.com" -> "Google").
+2.  \`summary\`: A concise summary of the article content. If extraction fails, use (e.g., "no summary available").
+3.  \`imageUrl\`: The full URL of the most relevant image from the article. MUST be an empty string "" if no suitable image is found, if image URLs cannot be accessed, or if the main extraction fails.
+4.  \`dataAiHint\`: two to four keywords describing the article content (e.g., "technology abstract", "mountain landscape"). Used for placeholder image services. If no image, base on article topic. If extraction fails, use an empty string.
 
 Article URL: {{{articleUrl}}}
 
