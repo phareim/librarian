@@ -31,7 +31,7 @@ const ExtractArticleInfoOutputSchema = z.object({
   title: z.string(),
   summary: z.string(),
   imageUrl: z.string().url().nullable(), // Validated as URL or null by the flow.
-  dataAiHint: z.string().max(50),
+  dataAiHint: z.string().max(100),
 });
 export type ExtractArticleInfoOutput = z.infer<typeof ExtractArticleInfoOutputSchema>;
 
@@ -49,7 +49,7 @@ Given the following URL, please extract the following fields. You MUST provide a
 
 1.  \`title\`: The extracted title of the article. If extraction fails, use the base of the URL itself (e.g., "https://www.google.com" -> "Google").
 2.  \`summary\`: A concise summary of the article content. If extraction fails, use (e.g., "no summary available").
-3.  \`imageUrl\`: The full URL of the most relevant image from the article. MUST be an empty string "" if no suitable image is found, if image URLs cannot be accessed, or if the main extraction fails.
+3.  \`imageUrl\`: The full and complete URL of the largest and most relevant image from the article. provide an empty string "" if no suitable image is found.
 4.  \`dataAiHint\`: two to four keywords describing the article content (e.g., "technology abstract", "mountain landscape"). Used for placeholder image services. If no image, base on article topic. If extraction fails, use an empty string.
 
 Article URL: {{{articleUrl}}}

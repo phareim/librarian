@@ -1,8 +1,13 @@
 import express, { Request, Response } from 'express';
 import { extractArticleInfo } from './ai/extract-article-info-flow';
+import axios from 'axios';
+import { JSDOM } from 'jsdom';
+import { Readability } from '@mozilla/readability';
+import TurndownService from 'turndown';
 
 const app = express();
 const port = 3000;
+const turndownService = new TurndownService();
 
 // Define an interface for our Article
 interface Article {
@@ -12,6 +17,7 @@ interface Article {
     summary?: string;
     imageUrl?: string | null;
     dataAiHint?: string;
+    articleContentMarkDown?: string;
 }
 
 // Use express.json() to parse JSON bodies
@@ -36,22 +42,37 @@ app.post('/save', async (req: Request, res: Response) => {
     }
 
     try {
-        const articleInfo = await extractArticleInfo({ articleUrl: url });
+        // Fetch the article content and extract metadata in parallel
+        const [articleResponse, aiResponse] = await Promise.all([
+            axios.get(url),
+            extractArticleInfo({ articleUrl: url })
+        ]);
+
+        const dom = new JSDOM(articleResponse.data, { url });
+        const reader = new Readability(dom.window.document);
+        const readableArticle = reader.parse();
+
+        if (!readableArticle) {
+            return res.status(500).send({ message: 'Could not extract article content.' });
+        }
+
+        const articleContentMarkDown = turndownService.turndown(readableArticle.content);
 
         const newArticle: Article = {
-            title: articleInfo.title,
+            title: readableArticle.title || aiResponse.title, // Prefer Readability's title
             url: url,
             dateSaved: new Date(),
-            summary: articleInfo.summary,
-            imageUrl: articleInfo.imageUrl,
-            dataAiHint: articleInfo.dataAiHint,
+            summary: aiResponse.summary,
+            imageUrl: aiResponse.imageUrl,
+            dataAiHint: aiResponse.dataAiHint,
+            articleContentMarkDown: articleContentMarkDown,
         };
 
         articles.push(newArticle);
         res.status(200).send({ message: 'Article saved successfully!', article: newArticle });
     } catch (error) {
-        console.error('Error extracting article info:', error);
-        res.status(500).send({ message: 'Error extracting article information' });
+        console.error('Error processing new article:', error);
+        res.status(500).send({ message: 'Error processing or extracting article information' });
     }
 });
 
