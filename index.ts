@@ -19,6 +19,7 @@ interface Article {
     dataAiHint?: string;
     articleContentMarkDown?: string;
     qualityAssessment?: {
+        description: string;
         textQuality: number;
         originality: number;
     };

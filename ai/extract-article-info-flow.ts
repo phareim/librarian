@@ -12,6 +12,7 @@ import {z} from 'zod';
 
 // Quality assessment schema - designed for easy extension
 const QualityAssessmentSchema = z.object({
+  description: z.string().describe('A detailed, grounded assessment of the article quality. Explain your reasoning for the scores, citing specific aspects of writing quality, originality, and overall value.'),
   textQuality: z.number().min(0).max(10).describe('Rate the writing quality from 0-10. Consider grammar, clarity, structure, and readability.'),
   originality: z.number().min(0).max(10).describe('Rate the originality from 0-10. Does this bring new insights, perspectives, or information to the topic?'),
 });
@@ -57,13 +58,14 @@ Given the following URL, please extract the following fields. You MUST provide a
 2.  \`summary\`: A concise summary of the article content. If extraction fails, use (e.g., "no summary available").
 3.  \`dataAiHint\`: two to four keywords describing the article content (e.g., "technology abstract", "mountain landscape"). Used for placeholder image services. If no image, base on article topic. If extraction fails, use an empty string.
 4.  \`qualityAssessment\`: Assess the article quality on these dimensions:
-   - \`textQuality\` (0-10): Rate the writing quality considering grammar, clarity, structure, and readability. Well-written, clear articles score higher.
-   - \`originality\` (0-10): Rate how original or novel the content is. Does it bring new insights, unique perspectives, or fresh information? Generic or rehashed content scores lower.
+   - \`description\`: First, provide a detailed, well-reasoned assessment of the article's quality. Be specific about what makes it well-written or poorly written, what makes it original or derivative. Ground your assessment in concrete observations about the content, structure, and insights presented.
+   - \`textQuality\` (0-10): Based on your description above, rate the writing quality considering grammar, clarity, structure, and readability. Well-written, clear articles score higher.
+   - \`originality\` (0-10): Based on your description above, rate how original or novel the content is. Does it bring new insights, unique perspectives, or fresh information? Generic or rehashed content scores lower.
 
 Article URL: {{{articleUrl}}}
 
 Your response MUST conform to the output schema. All fields in the schema are required.
-If you cannot access the URL or extract title and summary, you MUST still provide a string for title and summary indicating the failure, dataAiHint as a generic error string like "extraction error", and quality scores of 0 for both dimensions.
+If you cannot access the URL or extract title and summary, you MUST still provide a string for title and summary indicating the failure, dataAiHint as a generic error string like "extraction error", a description explaining the failure, and quality scores of 0 for both dimensions.
 `,
 });
 
@@ -85,6 +87,7 @@ const extractArticleInfoFlow = ai.defineFlow(
             summary: "The AI model encountered an error and could not process the URL.",
             dataAiHint: "model error",
             qualityAssessment: {
+                description: "Unable to assess quality due to model error during content extraction.",
                 textQuality: 0,
                 originality: 0,
             },
@@ -109,6 +112,7 @@ const extractArticleInfoFlow = ai.defineFlow(
 
     // Process quality assessment
     const qualityAssessment = modelOutput.qualityAssessment || {
+        description: "No quality assessment available due to extraction failure.",
         textQuality: 0,
         originality: 0,
     };
