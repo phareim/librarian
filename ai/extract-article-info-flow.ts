@@ -10,6 +10,12 @@
 import {ai} from './genkit';
 import {z} from 'zod';
 
+// Quality assessment schema - designed for easy extension
+const QualityAssessmentSchema = z.object({
+  textQuality: z.number().min(0).max(10).describe('Rate the writing quality from 0-10. Consider grammar, clarity, structure, and readability.'),
+  originality: z.number().min(0).max(10).describe('Rate the originality from 0-10. Does this bring new insights, perspectives, or information to the topic?'),
+});
+
 const ExtractArticleInfoInputSchema = z.object({
   articleUrl: z.string().url().describe('The URL of the article to process.'),
 });
@@ -21,6 +27,7 @@ const ModelOutputSchema = z.object({
   title: z.string().describe('The extracted title of the article. If extraction fails, use the base of the URL itself (e.g., "https://www.google.com" -> "Google").'),
   summary: z.string().describe('A concise summary of the article content. If extraction fails, use (e.g., "no summary available").'),
   dataAiHint: z.string().max(100).describe('two to four keywords describing the article content (e.g., "technology abstract", "mountain landscape"). Used for placeholder image services. If no image, base on article topic. If extraction fails, use an empty string.'),
+  qualityAssessment: QualityAssessmentSchema.describe('Quality assessment of the article content.'),
 });
 
 // Schema for the `extractArticleInfo` function's final, processed output.
@@ -30,6 +37,7 @@ const ExtractArticleInfoOutputSchema = z.object({
   title: z.string(),
   summary: z.string(),
   dataAiHint: z.string().max(100),
+  qualityAssessment: QualityAssessmentSchema,
 });
 export type ExtractArticleInfoOutput = z.infer<typeof ExtractArticleInfoOutputSchema>;
 
@@ -42,17 +50,20 @@ const extractArticleInfoPrompt = ai.definePrompt({
   name: 'extractArticleInfoPrompt',
   input: {schema: ExtractArticleInfoInputSchema},
   output: {schema: ModelOutputSchema}, // Use the simpler schema for the AI model
-  prompt: `You are an expert at extracting information from web pages.
+  prompt: `You are an expert at extracting information from web pages and assessing content quality.
 Given the following URL, please extract the following fields. You MUST provide a value for every field as specified.
 
 1.  \`title\`: The extracted title of the article. If extraction fails, use the base of the URL itself (e.g., "https://www.google.com" -> "Google").
 2.  \`summary\`: A concise summary of the article content. If extraction fails, use (e.g., "no summary available").
 3.  \`dataAiHint\`: two to four keywords describing the article content (e.g., "technology abstract", "mountain landscape"). Used for placeholder image services. If no image, base on article topic. If extraction fails, use an empty string.
+4.  \`qualityAssessment\`: Assess the article quality on these dimensions:
+   - \`textQuality\` (0-10): Rate the writing quality considering grammar, clarity, structure, and readability. Well-written, clear articles score higher.
+   - \`originality\` (0-10): Rate how original or novel the content is. Does it bring new insights, unique perspectives, or fresh information? Generic or rehashed content scores lower.
 
 Article URL: {{{articleUrl}}}
 
 Your response MUST conform to the output schema. All fields in the schema are required.
-If you cannot access the URL or extract title and summary, you MUST still provide a string for title and summary indicating the failure, and dataAiHint as a generic error string like "extraction error".
+If you cannot access the URL or extract title and summary, you MUST still provide a string for title and summary indicating the failure, dataAiHint as a generic error string like "extraction error", and quality scores of 0 for both dimensions.
 `,
 });
 
@@ -73,6 +84,10 @@ const extractArticleInfoFlow = ai.defineFlow(
             title: "Extraction Failed: Model Error",
             summary: "The AI model encountered an error and could not process the URL.",
             dataAiHint: "model error",
+            qualityAssessment: {
+                textQuality: 0,
+                originality: 0,
+            },
         };
     }
 
@@ -92,6 +107,11 @@ const extractArticleInfoFlow = ai.defineFlow(
         ? modelOutput.dataAiHint.substring(0, 100).trim()
         : "content hint";
 
+    // Process quality assessment
+    const qualityAssessment = modelOutput.qualityAssessment || {
+        textQuality: 0,
+        originality: 0,
+    };
 
     // If overall extraction failed (indicated by title), ensure imageUrl is null.
     const titleIndicatesFailure = finalTitle.toLowerCase().includes("extraction failed");
@@ -105,6 +125,7 @@ const extractArticleInfoFlow = ai.defineFlow(
       title: finalTitle,
       summary: finalSummary,
       dataAiHint: finalDataAiHint || (titleIndicatesFailure ? "extraction error" : "general content"), // Ensure dataAiHint is never empty
+      qualityAssessment: qualityAssessment,
     };
     
     // Zod will validate this result against ExtractArticleInfoOutputSchema upon return.

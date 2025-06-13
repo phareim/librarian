@@ -18,6 +18,10 @@ interface Article {
     imageUrl?: string | null;
     dataAiHint?: string;
     articleContentMarkDown?: string;
+    qualityAssessment?: {
+        textQuality: number;
+        originality: number;
+    };
 }
 
 // Use express.json() to parse JSON bodies
@@ -70,6 +74,7 @@ app.post('/save', async (req: Request, res: Response) => {
             imageUrl: imageUrl,
             dataAiHint: aiResponse.dataAiHint,
             articleContentMarkDown: articleContentMarkDown,
+            qualityAssessment: aiResponse.qualityAssessment,
         };
 
         articles.push(newArticle);
