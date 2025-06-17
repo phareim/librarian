@@ -88,7 +88,10 @@ app.post('/save', async (req: Request, res: Response) => {
 
 // Endpoint to list all saved URLs
 app.get('/read', (req: Request, res: Response) => {
-    res.status(200).send(articles);
+    res.status(200).json({
+        count: articles.length,
+        articles: articles,
+    });
 });
 
 app.listen(port, () => {
