@@ -91,6 +91,7 @@ Your `GOOGLE_API_KEY` should be stored securely in Secret Manager.
       --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
       --role="roles/secretmanager.secretAccessor"
     ```
+    > **Note:** If you get a `Service account ... does not exist` error, it's because Cloud Build creates this account on your first build. Run `npm run deploy` once (it will fail), which will create the account. Then, run the `gcloud secrets add-iam-policy-binding` command again, and it will succeed.
 
 ### Create an Artifact Registry Repository
 
