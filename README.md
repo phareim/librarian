@@ -2,55 +2,108 @@
 
 this is a helpful service that keeps taps on articles, books and their metadata.
 
-## Running the service
+## Local Development
 
-To run this service, you'll need Docker installed.
+For local development, you can run the service directly without Docker.
+
+1.  **Install Dependencies:**
+    ```bash
+    npm install
+    ```
+2.  **Set Environment Variable:**
+    You need to provide your `GOOGLE_API_KEY`. The easiest way is to create a `.env` file in the root of the project:
+    ```
+    GOOGLE_API_KEY=YOUR_API_KEY_HERE
+    ```
+    The application will automatically load this variable. Make sure `.env` is listed in your `.gitignore` file (it should be by default with Node projects, but it's good to check).
+
+3.  **Run the dev server:**
+    ```bash
+    npm run dev
+    ```
+    The service will be available at `http://localhost:3000`.
+
+## Running with Docker
+
+To run this service with Docker:
 
 1.  Build the Docker image:
     ```bash
-    docker build -t librarian .
+    npm run docker:build
     ```
 
 2.  Run the Docker container:
     ```bash
-    docker run -p 3000:3000 -d librarian
+    npm run docker:run
     ```
 
 The service will be available at `http://localhost:3000`.
 
 ## API
 
-### Save a URL
+### Save an Article
 
 -   **Endpoint:** `/save`
 -   **Method:** `POST`
--   **Body:** `{ "url": "https://example.com" }`
--   **Success Response:** `{ "message": "URL saved successfully!" }`
--   **Error Response:** `{ "message": "URL is required" }`
+-   **Body:** `{ "url": "https://example.com/some-article" }`
+-   **Success Response:** A JSON object containing a success message and the full article object that was saved.
 
-**Example:**
+    *Example Response:*
+    ```json
+    {
+        "message": "Article saved successfully!",
+        "article": {
+            "title": "The Title of the Article",
+            "url": "https://example.com/some-article",
+            "dateSaved": "2023-10-28T12:00:00.000Z",
+            "summary": "A concise, AI-generated summary of the article.",
+            "imageUrl": "https://example.com/image.jpg",
+            "dataAiHint": "technology, programming",
+            "articleContentMarkDown": "# The Title of the Article...",
+            "qualityAssessment": {
+                "description": "A detailed assessment of the article's quality...",
+                "textQuality": 8,
+                "originality": 7
+            }
+        }
+    }
+    ```
+
+**Example cURL:**
 ```bash
-curl -X POST -H "Content-Type: application/json" -d '{"url": "https://www.google.com"}' http://localhost:3000/save
+curl -X POST -H "Content-Type: application/json" -d '{"url": "https://www.theverge.com/23940333/google-search-generative-ai-results-labs-sge"}' http://localhost:3000/save
 ```
 
-### Read all saved URLs
+### Read All Saved Articles
 
 -   **Endpoint:** `/read`
 -   **Method:** `GET`
--   **Success Response:** An array of saved article objects.
+-   **Success Response:** A JSON object containing the count of articles and an array of all saved article objects.
 
-**Example Response:**
-```json
-[
+    *Example Response:*
+     ```json
     {
-        "title": "NAME",
-        "url": "https://www.google.com",
-        "dateSaved": "2023-10-27T10:00:00.000Z"
+        "count": 1,
+        "articles": [
+            {
+                "title": "The Title of the Article",
+                "url": "https://example.com/some-article",
+                "dateSaved": "2023-10-28T12:00:00.000Z",
+                "summary": "A concise, AI-generated summary of the article.",
+                "imageUrl": "https://example.com/image.jpg",
+                "dataAiHint": "technology, programming",
+                "articleContentMarkDown": "# The Title of the Article...",
+                "qualityAssessment": {
+                    "description": "A detailed assessment of the article's quality...",
+                    "textQuality": 8,
+                    "originality": 7
+                }
+            }
+        ]
     }
-]
-```
+    ```
 
-**Example:**
+**Example cURL:**
 ```bash
 curl http://localhost:3000/read
 ```
