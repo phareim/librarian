@@ -8,7 +8,8 @@
     "build": "tsc",
     "dev": "ts-node-dev --respawn --transpile-only index.ts",
     "docker:build": "docker build -t librarian .",
-    "docker:run": "docker run -p 3333:3000 -d librarian"
+    "docker:run": "docker run -p 3333:3000 -d librarian",
+    "deploy": "gcloud builds submit --config cloudbuild.yaml ."
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.0.0",

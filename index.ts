@@ -6,7 +6,7 @@ import { Readability } from '@mozilla/readability';
 import TurndownService from 'turndown';
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 const turndownService = new TurndownService();
 
 // Define an interface for our Article

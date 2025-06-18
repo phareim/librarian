@@ -3,22 +3,34 @@ FROM node:16-alpine as builder
 
 WORKDIR /usr/src/app
 
+# Copy package files and install all dependencies for the build
 COPY package*.json ./
-COPY tsconfig.json ./
+RUN npm install
 
-RUN npm install --only=production
+# Copy the rest of the source code
 COPY . .
+
+# Build the project
 RUN npm run build
 
-# Stage 2: Create the final image
+# Stage 2: Create the final, lean production image
 FROM node:16-alpine
 
 WORKDIR /usr/src/app
 
-COPY package*.json ./
+# Copy only the necessary files for production
+COPY package.json ./
+
+# Install production dependencies
 RUN npm install --only=production
 
+# Copy the compiled code from the builder stage
 COPY --from=builder /usr/src/app/dist ./dist
 
-EXPOSE 3000
+# The PORT will be automatically supplied by Cloud Run.
+# We don't need to expose it here, but it's good practice.
+# The default Cloud Run port is 8080.
+EXPOSE 8080
+
+# The start command from package.json is used to run the app.
 CMD [ "npm", "start" ] 
