@@ -1,11 +1,11 @@
 steps:
   # Build the container image
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/librarian/librarian-service:$COMMIT_SHA', '.']
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/librarian/librarian-service:$BUILD_ID', '.']
 
   # Push the container image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/librarian/librarian-service:$COMMIT_SHA']
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/librarian/librarian-service:$BUILD_ID']
 
   # Deploy container image to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -15,19 +15,14 @@ steps:
       - 'deploy'
       - 'librarian-service'
       - '--image'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/librarian/librarian-service:$COMMIT_SHA'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/librarian/librarian-service:$BUILD_ID'
       - '--region'
       - 'us-central1'
       - '--platform'
       - 'managed'
       - '--allow-unauthenticated'
-      - '--set-env-vars'
-      - 'GOOGLE_API_KEY=$$GOOGLE_API_KEY' # Pass the secret
+      - '--set-secrets=GOOGLE_API_KEY=GOOGLE_API_KEY:latest'
       - '--quiet'
-# This allows the build to access the secret
-availableSecrets:
-  secretManager:
-    - versionName: projects/$PROJECT_ID/secrets/GOOGLE_API_KEY/versions/latest
-      env: 'GOOGLE_API_KEY'
+
 images:
-  - 'us-central1-docker.pkg.dev/$PROJECT_ID/librarian/librarian-service:$COMMIT_SHA' 
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/librarian/librarian-service:$BUILD_ID' 
