@@ -1,5 +1,5 @@
 # Stage 1: Build the TypeScript code
-FROM node:16-alpine as builder
+FROM node:18-alpine as builder
 
 WORKDIR /usr/src/app
 
@@ -14,7 +14,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Create the final, lean production image
-FROM node:16-alpine
+FROM node:18-alpine
 
 WORKDIR /usr/src/app
 

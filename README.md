@@ -93,6 +93,15 @@ Your `GOOGLE_API_KEY` should be stored securely in Secret Manager.
     ```
     > **Note:** If you get a `Service account ... does not exist` error, it's because Cloud Build creates this account on your first build. Run `npm run deploy` once (it will fail), which will create the account. Then, run the `gcloud secrets add-iam-policy-binding` command again, and it will succeed.
 
+4.  **Grant the Cloud Run service account access to the secret:**
+    The Cloud Run service itself also needs permission to access the secret when it's running.
+    ```bash
+    PROJECT_NUMBER=$(gcloud projects describe "$(gcloud config get-value project)" --format="value(projectNumber)")
+    gcloud secrets add-iam-policy-binding GOOGLE_API_KEY \
+      --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+      --role="roles/secretmanager.secretAccessor"
+    ```
+
 ### Create an Artifact Registry Repository
 
 Cloud Build will store your Docker image in Artifact Registry.
