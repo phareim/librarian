@@ -1,11 +1,11 @@
 steps:
   # Build the container image
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/librarian/librarian-service:$BUILD_ID', '.']
+    args: ['build', '-t', 'europe-west1-docker.pkg.dev/$PROJECT_ID/librarian/librarian-service:$BUILD_ID', '.']
 
   # Push the container image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/librarian/librarian-service:$BUILD_ID']
+    args: ['push', 'europe-west1-docker.pkg.dev/$PROJECT_ID/librarian/librarian-service:$BUILD_ID']
 
   # Deploy container image to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -15,9 +15,9 @@ steps:
       - 'deploy'
       - 'librarian-service'
       - '--image'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/librarian/librarian-service:$BUILD_ID'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/librarian/librarian-service:$BUILD_ID'
       - '--region'
-      - 'us-central1'
+      - 'europe-west1'
       - '--platform'
       - 'managed'
       - '--allow-unauthenticated'
@@ -25,4 +25,4 @@ steps:
       - '--quiet'
 
 images:
-  - 'us-central1-docker.pkg.dev/$PROJECT_ID/librarian/librarian-service:$BUILD_ID' 
+  - 'europe-west1-docker.pkg.dev/$PROJECT_ID/librarian/librarian-service:$BUILD_ID' 
